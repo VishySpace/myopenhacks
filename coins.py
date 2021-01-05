@@ -92,7 +92,7 @@ print(matrix, b)
 
 c = np.ones(matrixsize)
 # c = np.multiply(c,-1)
-result = sp.linprog(c, None, None, matrix, b, (0, 1))
+result = sp.linprog(c, None, None, matrix, b, (0, 1), 'revised simplex')
 print(result.fun)
 print(result.x)
 
