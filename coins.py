@@ -4,7 +4,7 @@ import scipy.optimize as sp
 size = 10
 
 # input is position (x,y) of coin count with (0,0) as origin
-# x to the right and y down
+# x down and y right
 inputarr = [
     [0, 0, 1],
     [0, 2, 0],
