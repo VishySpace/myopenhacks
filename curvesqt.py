@@ -12,7 +12,6 @@ ents = []
 allStop = 0
 curIter = 0
 numIter = 1000
-trace = 0
 
 terminate = 0
 gridsize = 700
@@ -44,12 +43,12 @@ class Window(QMainWindow):
         self.setWindowTitle(self.title)
         self.setGeometry(self.top, self.left, self.width, self.height)
 
-        qbtn = QPushButton('Stop', self)
+        qbtn = QPushButton('END SIMULATION', self)
         qbtn.clicked.connect(stopLoop)
         qbtn.resize(qbtn.sizeHint())
         qbtn.move(gridsize/2, 10)
 
-        sbtn = QPushButton('Start', self)
+        sbtn = QPushButton('START', self)
         sbtn.clicked.connect(startTimer)
         sbtn.resize(qbtn.sizeHint())
         sbtn.move(xoffset+10, 10)
@@ -160,7 +159,6 @@ class EllipseEntity(Entity):
             self.dist = 0
         self.setAngle(self.angle)
 
-
 class FunctionEntity(Entity):
     def __init__(self, shape, speed, ix, iy, expr, amp):
         Entity.__init__(self, shape, speed, ix, iy)
@@ -209,56 +207,52 @@ class FollowerEntity(Entity):
         self.x = nx
         self.y = ny
 
-        #lin = Line(Point(x, y), Point(xf, yf))
-        #lin.setWidth(1)
-        #lin.setFill('green')
-        #lin.draw(win)
+class Puzzle():
+    def __init__(self, tr):
+        global trace, gridsize
+        self.entities = []
+        trace = tr
+        self.cx = gridsize/2
+        self.cy = gridsize/2
 
-
-def drawPoly(cx, cy, size, speed, n):
-    global fixedShapes
-    entities = []
-    redSquare = shapeSquare(10, Qt.red)
-    pts = []
-    for i in range(n):
-        x = cx + size * math.cos(2 * math.pi * i / n)
-        y = cy + size * math.sin(2 * math.pi * i / n)
-        pts.append(QPointF(x, y))
-        if (i > 0):
-            entities.append(FollowerEntity(redSquare, speed, x, y, entities[i-1], 1))
-        else:
-            entities.append(FollowerEntity(redSquare, speed, x, y, None, 1))
-    entities[0].following = entities[n-1]
-    fixedShapes.append(FixedEntity(shapePoly(pts, Qt.white), 0, 0))
-    return entities
-
-class bugs():
-    def __init__(self):
-        global gridsize, trace
-        trace = 1
-        cx = gridsize/2
-        cy = gridsize/2
-        n = 6
-        size = gridsize/4
-        speed = 6
-        self.entities = drawPoly(cx, cy, size, speed, n)
+    def Entities(self):
+        return self.entities
 
     def iterate(self, num):
         for e in range(len(self.entities)):
             self.entities[e].move()
-        return self.entities
 
-class orbits():
+class bugs(Puzzle):
     def __init__(self):
-        global gridsize, trace
-        trace = 1
-        incr0 = 3
-        incr1 = 2
-        speed = incr1
+        global gridsize
+        Puzzle.__init__(self, 1)
+        n = 6
+        size = gridsize/4
+        speed = 6
+        self.createPoly(self.cx, self.cy, size, speed, n)
+
+    def createPoly(self, cx, cy, size, speed, n):
+        global fixedShapes
+        redSquare = shapeSquare(10, Qt.red)
+        pts = []
+        for i in range(n):
+            x = cx + size * math.cos(2 * math.pi * i / n)
+            y = cy + size * math.sin(2 * math.pi * i / n)
+            pts.append(QPointF(x, y))
+            if (i > 0):
+                self.entities.append(FollowerEntity(redSquare, speed, x, y, self.entities[i-1], 1))
+            else:
+                self.entities.append(FollowerEntity(redSquare, speed, x, y, None, 1))
+        self.entities[0].following = self.entities[n-1]
+        fixedShapes.append(FixedEntity(shapePoly(pts, Qt.white), 0, 0))
+
+class orbits(Puzzle):
+    def __init__(self):
+        global gridsize
+        Puzzle.__init__(self, 1)
+        speed = 2
         n = 7
         radius = 100
-        cx = gridsize/2
-        cy = gridsize/2
         size = gridsize/4
 
         blueCircle = shapeCircle(2, Qt.blue)
@@ -266,7 +260,7 @@ class orbits():
         greenCircle = shapeCircle(2, Qt.green)
         yCircle = shapeCircle(6, Qt.yellow)
 
-        sun = FixedEntity(yCircle, cx, cy)
+        sun = FixedEntity(yCircle, self.cx, self.cy)
 
         earthSpeed = 2 # 30KMPS
         moonSpeed = 7 #1.1 KMPS
@@ -280,30 +274,27 @@ class orbits():
         self.entities.append(EllipseEntity(blueCircle, earthSpeed, startAngle, sun, earthRadius*1.5, earthRadius))
         self.entities.append(EllipseEntity(yCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius*2.5))
         self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius))
-        self.entities.append(FunctionEntity(redCircle, incr0, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50))
+        self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50))
         self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[1], 1))
         self.entities.append(sun)
 
     def iterate(self, num):
         for e in range(len(self.entities)):
             self.entities[e].move()
-        return self.entities
 
-class island():
+class island(Puzzle):
     # On a primitive island there live equal numbers of yellow bellied cowards and red bellied brave warriors.
     # They don't know their own type but can tell others types.
     # How do they pair up (with one yellow and one red) and head out to explore? Being primitive they can't count or communicate.
     def __init__(self):
-        global gridsize, painter, fixedShapes, trace
-        trace = 0
+        global gridsize, painter, fixedShapes
+        Puzzle.__init__(self, 0)
         self.islandRadius = (int) (gridsize / 3)
-        self.cx = gridsize/2
-        self.cy = gridsize/2
         self.numP = 40
         self.pspeed = 10
 
         # Generate people
-        self.persons = []
+        self.entities = []
         redCircle = shapeCircle(2, Qt.red)
         yellowCircle = shapeCircle(2, Qt.yellow)
         self.emptyCircle = shapeCircle(0, Qt.white)
@@ -322,19 +313,20 @@ class island():
             pr = randint(0, self.islandRadius)
             px = self.cx + pr*math.cos(pa)
             py = self.cy + pr*math.sin(pa)
-            self.persons.append(FollowerEntity(c, self.pspeed, px, py, None, 1))
+            self.entities.append(FollowerEntity(c, self.pspeed, px, py, None, 1))
+
     def iterate(self, iter):
         for n0 in range(self.numP):
             # each person looks at their closest 2 neighbors.
             # If there are similar, they move towards them (say using midpoint).
             # If dissimilar, he moves away from them. Eventually converge into two groups
-            p0 = self.persons[n0]
+            p0 = self.entities[n0]
             minDist = 4 * (self.islandRadius**2)
             minP1 = n0
             for n1 in range(self.numP):
                 if (n0 == n1):
                     continue
-                p1 = self.persons[n1]
+                p1 = self.entities[n1]
                 d1 = (p1.x-p0.x)**2 + (p1.y-p0.y)**2
                 if (d1 < minDist):
                     minP1 = n1
@@ -345,22 +337,21 @@ class island():
             for n1 in range(self.numP):
                 if ((n1 == n0) or (n1 == minP1)):
                     continue
-                p1 = self.persons[n1]
+                p1 = self.entities[n1]
                 d1 = (p1.x-p0.x)**2 + (p1.y-p0.y)**2
                 if (d1 < minDist):
                     minP2 = n1
                     minDist = d1
-            if ((self.cx-self.persons[n0].x)**2 + (self.cy-self.persons[n0].y)**2 >= self.islandRadius**2):
-                self.persons[n0].following = self.sun
-                self.persons[n0].towards = 1
+            if ((self.cx-self.entities[n0].x)**2 + (self.cy-self.entities[n0].y)**2 >= self.islandRadius**2):
+                self.entities[n0].following = self.sun
+                self.entities[n0].towards = 1
             else:
-                mid = FixedEntity(self.emptyCircle, (self.persons[minP1].x + self.persons[minP2].x)/2, \
-                                (self.persons[minP1].y + self.persons[minP2].y)/2)
-                self.persons[n0].following = mid
-                self.persons[n0].towards = (self.persons[minP1].shape.color == self.persons[minP2].shape.color)
-            self.persons[n0].move()
+                mid = FixedEntity(self.emptyCircle, (self.entities[minP1].x + self.entities[minP2].x)/2, \
+                                (self.entities[minP1].y + self.entities[minP2].y)/2)
+                self.entities[n0].following = mid
+                self.entities[n0].towards = (self.entities[minP1].shape.color == self.entities[minP2].shape.color)
+            self.entities[n0].move()
 
-        return self.persons
 
 def stopLoop():
     global allStop
@@ -373,7 +364,8 @@ def startTimer():
         endProgram()
         return
     curIter += 1
-    ents = prob.iterate(curIter)
+    prob.iterate(curIter)
+    ents = prob.Entities()
     window.update()
     threading.Timer(0.3, startTimer).start()
 
@@ -381,17 +373,18 @@ def endProgram():
     sys.exit(0)
 
 def main():
-    global window, painter, prob
+    global window, painter, prob, ents
 
     App = QApplication(sys.argv)
     window = Window()
 
     ## SELECT the problem you want to simulate, comment the rest
-    #prob = orbits()
+    # prob = orbits()
     prob = island()
     #prob = bugs()
-
+    ents = prob.Entities()
     window.InitWindow()
-    startTimer()
+    window.update()
+    # startTimer() <-- uncomment to auto start the program
     sys.exit(App.exec_())
 main()
