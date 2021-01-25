@@ -9,19 +9,25 @@ from random import seed, randint
 import sys
 from datetime import datetime
 
+# design --
+# All Puzzle logic is handled within puzzle classes: island, bugs, orbits
+# Graphics is handled by Window class which simply draws from ents and fixedShapes lists
+# All drawn objects are derived from Entity, which has a shape class and coordinates
+# Each entity can either be static, going on an ellipse around another entity,
+# tracking towards or away from an entity, or tracking any arbitrary y=f(x) sine etc function
+# Shapeclass can be whatever you want: ellipse, square, person, etc.
+# Simulation: A timer fires regularly and calls the Puzzle Iterate() to move its entities however it wishes (captured in the list of entities),
+# and calls Window to paint from the two lists
+
 ents = []  # moving entities
 fixedShapes = [] # fixed entities like background
 allStop = 0 # stop rounds
 curIter = 0
 numIter = 1000
-
 gridsize = 700
 
-# seed random number generator
-dt = datetime.now()
-sd = dt.microsecond
-seed(sd)
 
+## GRAPHICS CLASS. I understand this part the least. It just works.
 class Window(QMainWindow):
     def __init__(self):
         global painter
@@ -66,12 +72,13 @@ class Window(QMainWindow):
             p = ents[i]
             p.draw(painter)
 
+## SHAPES ##############################
 class shapeCircle(object):
     def __init__(self, radius, color):
         self.radius = radius
         self.color = color
 
-    def draw(self, x, y, painter):
+    def draw(self, x, y, painter, highlight):
         if (self.radius == 0):
             return
         # painter.setPen(QPen(self.color, 1, Qt.SolidLine))
@@ -84,7 +91,7 @@ class shapePoly(object):
         self.pts = pts
         self.color = color
 
-    def draw(self, x, y, painter):
+    def draw(self, x, y, painter, highlight):
         # painter.setPen(QPen(self.color, 1, Qt.SolidLine))
         polygon = QtGui.QPolygonF()
         for i in range(len(self.pts)):
@@ -97,7 +104,7 @@ class shapeSquare(object):
         self.side = side
         self.color = color
 
-    def draw(self, x, y, painter):
+    def draw(self, x, y, painter, highlight):
         painter.setBrush(QBrush(self.color, Qt.SolidPattern))
         painter.drawRect(x - self.side/2, y - self.side/2, self.side, self.side)
 
@@ -108,7 +115,7 @@ class shapePerson(object):
         self.head = width/3
         self.leg = width/2.5
 
-    def draw(self, x, y, painter):
+    def draw(self, x, y, painter, highlight):
         # painter.setPen(QPen(self.color, 1, Qt.SolidLine))
         painter.setBrush(QBrush(self.color, Qt.SolidPattern))
         painter.drawEllipse(x - self.head, y - self.width - self.head, 2*self.head, 2*self.head)
@@ -116,8 +123,13 @@ class shapePerson(object):
         painter.drawLine(x-self.head, y+self.width/2, x-self.head, y+self.width+self.leg)
         painter.drawLine(x+self.head, y+self.width/2, x+self.head, y+self.width+self.leg)
 
+        if (highlight):
+            painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
+            painter.drawEllipse(x - self.head, y - self.width - 3*self.head, 2*self.head, 2*self.head)
+
         return
 
+## ENTITIES ##############################
 class Entity(object):
     def __init__(self, shape, speed, x, y):
         self.shape = shape
@@ -126,15 +138,19 @@ class Entity(object):
         self.y = y
         self.pastx = []
         self.pasty = []
+        self.highlight = 0
+
+    def doHighlight(self):
+        self.highlight = 1
 
     def draw(self, painter):
         if (trace):
             self.pastx.append(self.x)
             self.pasty.append(self.y)
             for i in range(len(self.pastx)):
-                self.shape.draw(self.pastx[i], self.pasty[i], painter)
+                self.shape.draw(self.pastx[i], self.pasty[i], painter, self.highlight)
         else:
-            self.shape.draw(self.x, self.y, painter)
+            self.shape.draw(self.x, self.y, painter, self.highlight)
     def move(self, x, y):
         self.x = x
         self.y = y
@@ -221,6 +237,7 @@ class FollowerEntity(Entity):
         self.x = nx
         self.y = ny
 
+## PUZZLES ##############################
 class Puzzle():
     def __init__(self, tr):
         global trace, gridsize
@@ -309,26 +326,33 @@ class island(Puzzle):
 
         # Generate people
         self.entities = []
-        redCircle = shapePerson(6, Qt.red)
-        yellowCircle = shapePerson(6, Qt.yellow)
-        blueCircle = shapePerson(6, Qt.blue)
+        self.redCircle = shapePerson(6, Qt.red)
+        self.yellowCircle = shapePerson(6, Qt.yellow)
+        self.blueCircle = shapePerson(6, Qt.blue)
         self.emptyCircle = shapeCircle(0, Qt.white)
         self.border = FixedEntity(shapeCircle(self.islandRadius, Qt.white), self.cx, self.cy)
         self.sun = FixedEntity(self.emptyCircle, self.cx, self.cy)
         fixedShapes.append(self.border)
+        self.random = []
+        
+        # a fraction of them are shapeshifters: they shift color on each move!
+        prando = 10
 
         for p in range(self.numP):
             r = randint(0,100)
             if (r < 50):
-                c = redCircle
+                c = self.redCircle
             else:
-                c = blueCircle
-
+                c = self.blueCircle
             pa = randint(0, 360)
             pr = randint(0, self.islandRadius)
             px = self.cx + pr*math.cos(pa)
             py = self.cy + pr*math.sin(pa)
             self.entities.append(FollowerEntity(c, self.pspeed, px, py, None, 1))
+            self.random.append(randint(0,100) < prando)
+            if (self.random[p]):
+                self.entities[p].doHighlight()
+
 
     def iterate(self, iter):
         for n0 in range(self.numP):
@@ -336,6 +360,11 @@ class island(Puzzle):
             # If there are similar, they move towards them (say using midpoint).
             # If dissimilar, he moves away from them. Eventually converge into two groups
             p0 = self.entities[n0]
+            if (self.random[n0]):
+                if (p0.shape.color == Qt.blue):
+                    p0.shape = self.redCircle
+                else:
+                    p0.shape = self.blueCircle
             minDist = 4 * (self.islandRadius**2)
             minP1 = n0
             for n1 in range(self.numP):
@@ -357,6 +386,7 @@ class island(Puzzle):
                 if (d1 < minDist):
                     minP2 = n1
                     minDist = d1
+            # dont let it go outside the island
             if ((self.cx-self.entities[n0].x)**2 + (self.cy-self.entities[n0].y)**2 >= self.islandRadius**2):
                 self.entities[n0].following = self.sun
                 self.entities[n0].towards = 1
@@ -368,10 +398,7 @@ class island(Puzzle):
             self.entities[n0].move()
 
 
-def stopLoop():
-    global allStop
-    allStop = 1
-
+## SIMULATION ITERATOR ##############################
 def startTimer():
     global numIter, curIter, window, prob, ents
     # print("in timer: ", curIter, numIter)
@@ -384,18 +411,23 @@ def startTimer():
     window.update()
     threading.Timer(0.3, startTimer).start()
 
+def stopLoop():
+    global allStop
+    allStop = 1
+
 def endProgram():
     sys.exit(0)
 
 def main():
     global window, painter, prob, ents
 
+    seed(datetime.now().microsecond)
     App = QApplication(sys.argv)
     window = Window()
 
     ## SELECT the problem you want to simulate, comment the rest
     #prob = orbits()
-    #prob = bugs(5)
+    #prob = bugs(5) # takes number of bugs
     prob = island()
 
     ents = prob.Entities()
