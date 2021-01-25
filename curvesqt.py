@@ -8,24 +8,19 @@ from math import *
 from random import seed, randint
 import sys
 from datetime import datetime
-ents = []
-allStop = 0
+
+ents = []  # moving entities
+fixedShapes = [] # fixed entities like background
+allStop = 0 # stop rounds
 curIter = 0
 numIter = 1000
 
-terminate = 0
 gridsize = 700
-width = 500
-height = gridsize / 2
-xoffset = (gridsize - width)  / 2
-yoffset = (gridsize - height) / 2
-fixedShapes = []
 
 # seed random number generator
 dt = datetime.now()
 sd = dt.microsecond
 seed(sd)
-# generate some integers
 
 class Window(QMainWindow):
     def __init__(self):
@@ -50,7 +45,7 @@ class Window(QMainWindow):
         sbtn = QPushButton('START', self)
         sbtn.clicked.connect(startTimer)
         sbtn.resize(qbtn.sizeHint())
-        sbtn.move(xoffset+10, 10)
+        sbtn.move(120, 10)
 
         self.show()
 
