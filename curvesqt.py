@@ -104,6 +104,23 @@ class shapeSquare(object):
         painter.setBrush(QBrush(self.color, Qt.SolidPattern))
         painter.drawRect(x - self.side/2, y - self.side/2, self.side, self.side)
 
+class shapePerson(object):
+    def __init__(self, width, color):
+        self.width = width
+        self.color = color
+        self.head = width/3
+        self.leg = width/2.5
+
+    def draw(self, x, y, painter):
+        # painter.setPen(QPen(self.color, 1, Qt.SolidLine))
+        painter.setBrush(QBrush(self.color, Qt.SolidPattern))
+        painter.drawEllipse(x - self.head, y - self.width - self.head, 2*self.head, 2*self.head)
+        painter.drawRect(x - self.width/2, y - self.width/2, self.width, self.width)
+        painter.drawLine(x-self.head, y+self.width/2, x-self.head, y+self.width+self.leg)
+        painter.drawLine(x+self.head, y+self.width/2, x+self.head, y+self.width+self.leg)
+
+        return
+
 class Entity(object):
     def __init__(self, shape, speed, x, y):
         self.shape = shape
@@ -259,7 +276,6 @@ class orbits(Puzzle):
         redCircle = shapeCircle(2, Qt.red)
         greenCircle = shapeCircle(2, Qt.green)
         yCircle = shapeCircle(6, Qt.yellow)
-
         sun = FixedEntity(yCircle, self.cx, self.cy)
 
         earthSpeed = 2 # 30KMPS
@@ -295,19 +311,20 @@ class island(Puzzle):
 
         # Generate people
         self.entities = []
-        redCircle = shapeCircle(2, Qt.red)
-        yellowCircle = shapeCircle(2, Qt.yellow)
+        redCircle = shapePerson(6, Qt.red)
+        yellowCircle = shapePerson(6, Qt.yellow)
+        blueCircle = shapePerson(6, Qt.blue)
         self.emptyCircle = shapeCircle(0, Qt.white)
-        blueCircle = shapeCircle(2, Qt.blue)
         self.border = FixedEntity(shapeCircle(self.islandRadius, Qt.white), self.cx, self.cy)
         self.sun = FixedEntity(self.emptyCircle, self.cx, self.cy)
         fixedShapes.append(self.border)
+
         for p in range(self.numP):
             r = randint(0,100)
             if (r < 50):
-                c = shapeCircle(3, Qt.red)
+                c = redCircle
             else:
-                c = shapeCircle(3, Qt.blue)
+                c = blueCircle
 
             pa = randint(0, 360)
             pr = randint(0, self.islandRadius)
