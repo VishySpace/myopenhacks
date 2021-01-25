@@ -26,19 +26,13 @@ class shapeCircle(object):
     def draw(self, x, y):
         if (self.radius == 0):
             return
-
         self.sobj.move(x - self.sobj.getCenter().getX(), y - self.sobj.getCenter().getY())
         return
-        self.sobj = Circle(Point(x, y), self.radius)
-        self.sobj.setOutline(self.color)
-        self.sobj.setFill(self.color)
-        self.sobj.draw(win)
-        self.sobj.undraw()
-
-        self.sobj = Circle(Point(x, y), self.radius)
-        self.sobj.setOutline(self.color)
-        self.sobj.setFill(self.color)
-        self.sobj.draw(win)
+        # if you want to draw without erasing the old one
+        c1 = Circle(Point(x, y), self.radius)
+        c1.setOutline(self.color)
+        c1.setFill(self.color)
+        c1.draw(win)
 
 class shapeSquare(object):
     def __init__(self, side, color):
