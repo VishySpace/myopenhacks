@@ -27,7 +27,6 @@ sd = dt.microsecond
 seed(sd)
 # generate some integers
 
-
 class Window(QMainWindow):
     def __init__(self):
         global painter
@@ -52,6 +51,7 @@ class Window(QMainWindow):
         sbtn.clicked.connect(startTimer)
         sbtn.resize(qbtn.sizeHint())
         sbtn.move(xoffset+10, 10)
+
         self.show()
 
     def drawBorders(ll, ur):
@@ -60,8 +60,10 @@ class Window(QMainWindow):
         return
 
     def paintEvent(self, event):
-        global ents, fixedShapes
+        global ents, fixedShapes, numIter
+        self.setWindowTitle("Round: " + str(curIter))
         painter = QPainter(self)
+
         for i in range(len(fixedShapes)):
             p = fixedShapes[i]
             p.draw(painter)
@@ -239,14 +241,15 @@ class Puzzle():
         for e in range(len(self.entities)):
             self.entities[e].move()
 
+# bugs crawling towards each other on a polygon
 class bugs(Puzzle):
-    def __init__(self):
+    def __init__(self, n):
         global gridsize
         Puzzle.__init__(self, 1)
-        n = 6
+        self.sides = n
         size = gridsize/4
         speed = 6
-        self.createPoly(self.cx, self.cy, size, speed, n)
+        self.createPoly(self.cx, self.cy, size, speed, self.sides)
 
     def createPoly(self, cx, cy, size, speed, n):
         global fixedShapes
@@ -396,12 +399,13 @@ def main():
     window = Window()
 
     ## SELECT the problem you want to simulate, comment the rest
-    # prob = orbits()
+    #prob = orbits()
+    #prob = bugs(5)
     prob = island()
-    #prob = bugs()
+
     ents = prob.Entities()
     window.InitWindow()
     window.update()
-    # startTimer() <-- uncomment to auto start the program
+    ## startTimer() <-- uncomment to auto start the program
     sys.exit(App.exec_())
 main()
