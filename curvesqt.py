@@ -84,7 +84,9 @@ class shapeCircle(object):
         # painter.setPen(QPen(self.color, 1, Qt.SolidLine))
         painter.setBrush(QBrush(self.color, Qt.SolidPattern))
         painter.drawEllipse(x - self.radius, y - self.radius, 2*self.radius, 2*self.radius)
-        return
+        if (highlight):
+            painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
+            painter.drawEllipse(x - self.radius, y - 3*self.radius, 2*self.radius, 2*self.radius)
 
 class shapePoly(object):
     def __init__(self, pts, color):
@@ -107,6 +109,9 @@ class shapeSquare(object):
     def draw(self, x, y, painter, highlight):
         painter.setBrush(QBrush(self.color, Qt.SolidPattern))
         painter.drawRect(x - self.side/2, y - self.side/2, self.side, self.side)
+        if (highlight):
+            painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
+            painter.drawEllipse(x - self.side/2, y - 1.5*self.side, self.side, self.side)
 
 class shapePerson(object):
     def __init__(self, width, color):
@@ -127,7 +132,6 @@ class shapePerson(object):
             painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
             painter.drawEllipse(x - self.head, y - self.width - 3*self.head, 2*self.head, 2*self.head)
 
-        return
 
 ## ENTITIES ##############################
 class Entity(object):
@@ -308,6 +312,7 @@ class orbits(Puzzle):
         self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50))
         self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[1], 1))
         self.entities.append(sun)
+        self.entities[3].doHighlight()
 
     def iterate(self, num):
         for e in range(len(self.entities)):
@@ -334,7 +339,7 @@ class island(Puzzle):
         self.sun = FixedEntity(self.emptyCircle, self.cx, self.cy)
         fixedShapes.append(self.border)
         self.random = []
-        
+
         # a fraction of them are shapeshifters: they shift color on each move!
         prando = 10
 
@@ -426,8 +431,8 @@ def main():
     window = Window()
 
     ## SELECT the problem you want to simulate, comment the rest
-    #prob = orbits()
-    #prob = bugs(5) # takes number of bugs
+    # prob = orbits()
+    # prob = bugs(5) # takes number of bugs
     prob = island()
 
     ents = prob.Entities()
