@@ -234,7 +234,8 @@ def drawPoly(cx, cy, size, speed, n):
 
 class bugs():
     def __init__(self):
-        global gridsize
+        global gridsize, trace
+        trace = 1
         cx = gridsize/2
         cy = gridsize/2
         n = 6
@@ -249,7 +250,8 @@ class bugs():
 
 class orbits():
     def __init__(self):
-        global gridsize
+        global gridsize, trace
+        trace = 1
         incr0 = 3
         incr1 = 2
         speed = incr1
@@ -292,7 +294,8 @@ class island():
     # They don't know their own type but can tell others types.
     # How do they pair up (with one yellow and one red) and head out to explore? Being primitive they can't count or communicate.
     def __init__(self):
-        global gridsize, painter, fixedShapes
+        global gridsize, painter, fixedShapes, trace
+        trace = 0
         self.islandRadius = (int) (gridsize / 3)
         self.cx = gridsize/2
         self.cy = gridsize/2
@@ -320,9 +323,6 @@ class island():
             px = self.cx + pr*math.cos(pa)
             py = self.cy + pr*math.sin(pa)
             self.persons.append(FollowerEntity(c, self.pspeed, px, py, None, 1))
-
-
-
     def iterate(self, iter):
         for n0 in range(self.numP):
             # each person looks at their closest 2 neighbors.
@@ -381,14 +381,16 @@ def endProgram():
     sys.exit(0)
 
 def main():
-    global window, painter, prob,trace
+    global window, painter, prob
 
     App = QApplication(sys.argv)
     window = Window()
-    trace = 0
+
+    ## SELECT the problem you want to simulate, comment the rest
     #prob = orbits()
     prob = island()
     #prob = bugs()
+
     window.InitWindow()
     startTimer()
     sys.exit(App.exec_())
