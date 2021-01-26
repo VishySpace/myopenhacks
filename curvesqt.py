@@ -9,7 +9,7 @@ from random import seed, randint
 import sys
 from datetime import datetime
 
-# design --
+############### Code Overview
 # All Puzzle logic is handled within puzzle classes: island, bugs, orbits
 # Graphics is handled by Window class which simply draws from ents and fixedShapes lists
 # All drawn objects are derived from Entity, which has a shape class and coordinates
@@ -18,6 +18,12 @@ from datetime import datetime
 # Shapeclass can be whatever you want: ellipse, square, person, etc.
 # Simulation: A timer fires regularly and calls the Puzzle Iterate() to move its entities however it wishes (captured in the list of entities),
 # and calls Window to paint from the two lists
+############### IDEAS To Do
+# Tilted functionEntities
+# Split entities on collision
+# Entity Contained on another?
+# Learning
+# Real-time external inputs
 
 ents = []  # moving entities
 fixedShapes = [] # fixed entities like background
@@ -143,6 +149,7 @@ class Entity(object):
         self.pastx = []
         self.pasty = []
         self.highlight = 0
+        self.tilt = 0
 
     def doHighlight(self):
         self.highlight = 1
@@ -155,6 +162,7 @@ class Entity(object):
                 self.shape.draw(self.pastx[i], self.pasty[i], painter, self.highlight)
         else:
             self.shape.draw(self.x, self.y, painter, self.highlight)
+
     def move(self, x, y):
         self.x = x
         self.y = y
@@ -169,7 +177,7 @@ class FixedEntity(Entity):
         return
 
 class EllipseEntity(Entity):
-    def __init__(self, shape, speed, angle, cobj, rx, ry):
+    def __init__(self, shape, speed, angle, cobj, rx, ry, tiltAngle):
         Entity.__init__(self, shape, speed, 0, 0)
         self.rx = rx
         self.ry = ry
@@ -177,13 +185,14 @@ class EllipseEntity(Entity):
         self.setAngle(angle)
         self.perimeter = 2 * math.pi * sqrt((rx**2 + ry**2)/2)
         self.dist = self.angle * self.perimeter / 360
+        self.tilt = tiltAngle
 
     def setAngle(self, angle):
         self.angle = angle
         theta = 2 * math.pi * self.angle/360
         r = (self.rx * self.ry) / sqrt((self.rx**2 * (sin(theta))**2) + (self.ry**2 * (cos(theta))**2))
-        self.x = self.center.x + r*math.cos(theta)
-        self.y = self.center.y + r*math.sin(theta)
+        self.x = self.center.x + r*math.cos(theta + 2 * math.pi * self.tilt/360)
+        self.y = self.center.y + r*math.sin(theta+ 2 * math.pi * self.tilt/360)
 
     def move(self):
         self.dist += self.speed
@@ -297,20 +306,20 @@ class orbits(Puzzle):
         yCircle = shapeCircle(6, Qt.yellow)
         sun = FixedEntity(yCircle, self.cx, self.cy)
 
-        earthSpeed = 2 # 30KMPS
-        moonSpeed = 7 #1.1 KMPS
-        marsSpeed = 6
+        earthSpeed = 20 # 30KMPS
+        moonSpeed = 40 #1.1 KMPS
+        marsSpeed = 20
         rocketSpeed = 4
         earthRadius = radius # 1.5 * 10^8 KM
         moonRadius = radius / 4 # 3.48 * 10^5KM
 
-        startAngle = 45
+        startAngle = 0
         self.entities = []
-        self.entities.append(EllipseEntity(blueCircle, earthSpeed, startAngle, sun, earthRadius*1.5, earthRadius))
-        self.entities.append(EllipseEntity(yCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius*2.5))
-        self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius))
+        self.entities.append(EllipseEntity(blueCircle, earthSpeed, startAngle, sun, earthRadius*3.5, earthRadius, 30))
+        self.entities.append(EllipseEntity(redCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius, -45))
+        self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius, 0))
         self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50))
-        self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[1], 1))
+        # self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[1], 1))
         self.entities.append(sun)
         self.entities[3].doHighlight()
 
@@ -358,7 +367,6 @@ class island(Puzzle):
             if (self.random[p]):
                 self.entities[p].doHighlight()
 
-
     def iterate(self, iter):
         for n0 in range(self.numP):
             # each person looks at their closest 2 neighbors.
@@ -380,7 +388,6 @@ class island(Puzzle):
                 if (d1 < minDist):
                     minP1 = n1
                     minDist = d1
-
             minDist = 4 * self.islandRadius ** 2
             minP2 = n0
             for n1 in range(self.numP):
@@ -401,7 +408,6 @@ class island(Puzzle):
                 self.entities[n0].following = mid
                 self.entities[n0].towards = (self.entities[minP1].shape.color == self.entities[minP2].shape.color)
             self.entities[n0].move()
-
 
 ## SIMULATION ITERATOR ##############################
 def startTimer():
