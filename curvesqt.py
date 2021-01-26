@@ -5,9 +5,10 @@ from PyQt5.QtCore import Qt, QPointF
 import threading
 import math
 from math import *
-from random import seed, randint
+from random import seed, randint, random
 import sys
 from datetime import datetime
+import numpy as np
 
 ############### Code Overview
 # All Puzzle logic is handled within puzzle classes: island, bugs, orbits
@@ -358,7 +359,7 @@ class island(Puzzle):
                 c = self.redCircle
             else:
                 c = self.blueCircle
-            pa = randint(0, 360)
+            pa = 2*math.pi*random()
             pr = randint(0, self.islandRadius)
             px = self.cx + pr*math.cos(pa)
             py = self.cy + pr*math.sin(pa)
@@ -368,7 +369,8 @@ class island(Puzzle):
                 self.entities[p].doHighlight()
 
     def iterate(self, iter):
-        for n0 in range(self.numP):
+        permutation = np.random.permutation(self.numP)
+        for n0 in permutation:
             # each person looks at their closest 2 neighbors.
             # If there are similar, they move towards them (say using midpoint).
             # If dissimilar, he moves away from them. Eventually converge into two groups
