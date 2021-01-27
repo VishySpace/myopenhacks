@@ -224,8 +224,8 @@ class PolygonEntity(Entity):
     def setAngle(self, angle):
         self.angle = angle
         sideAngle = self.sectorAngle * round(angle / self.sectorAngle)
-        sideNormalX = math.cos(degToRadian(sideAngle))
-        sideNormalY = math.sin(degToRadian(sideAngle))
+        sideNormalX = math.cos(degToRadian(sideAngle + self.tilt))
+        sideNormalY = math.sin(degToRadian(sideAngle + self.tilt))
         sideward = self.apothem * math.tan(degToRadian(angle - sideAngle))
         self.x = self.center.x + sideNormalX * self.apothem - sideNormalY * sideward
         self.y  = self.center.y + sideNormalY * self.apothem + sideNormalX * sideward
@@ -342,7 +342,7 @@ class orbits(Puzzle):
         yCircle = shapeCircle(6, Qt.yellow)
         sun = FixedEntity(yCircle, self.cx, self.cy)
 
-        earthSpeed = 10 # 30KMPS
+        earthSpeed = 30 # 30KMPS
         moonSpeed = 30 #1.1 KMPS
         marsSpeed = 20
         rocketSpeed = 4
@@ -351,7 +351,7 @@ class orbits(Puzzle):
 
         startAngle = 0
         self.entities = []
-        self.entities.append(PolygonEntity(blueCircle, earthSpeed, startAngle, sun, 5, earthRadius, 0))
+        self.entities.append(PolygonEntity(blueCircle, earthSpeed, startAngle, sun, 5, earthRadius, -50))
         self.entities.append(EllipseEntity(redCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius, -45))
         self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius, 0))
         self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50))
@@ -474,7 +474,7 @@ def main():
     window = Window()
 
     ## SELECT the problem you want to simulate, comment the rest
-    # prob = orbits()
+    #prob = orbits()
     # prob = bugs(5) # takes number of bugs
     prob = island()
 
