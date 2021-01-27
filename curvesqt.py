@@ -203,6 +203,41 @@ class EllipseEntity(Entity):
             self.dist = 0
         self.setAngle(self.angle)
 
+def degToRadian(angle):
+    return (angle * math.pi / 180)
+
+class PolygonEntity(Entity):
+    def __init__(self, shape, speed, angle, cobj, nsides, sidelength, tiltAngle):
+        Entity.__init__(self, shape, speed, 0, 0)
+        self.nsides = nsides
+        self.center = cobj
+        self.sidelength = sidelength
+        self.perimeter = self.nsides * self.sidelength
+        self.tilt = tiltAngle
+        self.corners = []
+        self.sectorAngle = 360 / self.nsides
+        self.angle = angle
+        self.dist = self.angle * self.perimeter / 360
+        self.apothem = self.sidelength / (2 * math.tan(degToRadian(180 / self.nsides)))
+        self.setAngle(self.angle)
+
+    def setAngle(self, angle):
+        self.angle = angle
+        sideAngle = self.sectorAngle * round(angle / self.sectorAngle)
+        sideNormalX = math.cos(degToRadian(sideAngle))
+        sideNormalY = math.sin(degToRadian(sideAngle))
+        sideward = self.apothem * math.tan(degToRadian(angle - sideAngle))
+        self.x = self.center.x + sideNormalX * self.apothem - sideNormalY * sideward
+        self.y  = self.center.y + sideNormalY * self.apothem + sideNormalX * sideward
+
+    def move(self):
+        self.dist += self.speed
+        self.angle = (self.dist * 360 / self.perimeter)
+        if (self.angle >= 360):
+            self.angle -= 360
+            self.dist = 0
+        self.setAngle(self.angle)
+
 class FunctionEntity(Entity):
     def __init__(self, shape, speed, ix, iy, expr, amp):
         Entity.__init__(self, shape, speed, ix, iy)
@@ -307,20 +342,20 @@ class orbits(Puzzle):
         yCircle = shapeCircle(6, Qt.yellow)
         sun = FixedEntity(yCircle, self.cx, self.cy)
 
-        earthSpeed = 20 # 30KMPS
-        moonSpeed = 40 #1.1 KMPS
+        earthSpeed = 10 # 30KMPS
+        moonSpeed = 30 #1.1 KMPS
         marsSpeed = 20
         rocketSpeed = 4
-        earthRadius = radius # 1.5 * 10^8 KM
+        earthRadius = 3 * radius # 1.5 * 10^8 KM
         moonRadius = radius / 4 # 3.48 * 10^5KM
 
         startAngle = 0
         self.entities = []
-        self.entities.append(EllipseEntity(blueCircle, earthSpeed, startAngle, sun, earthRadius*3.5, earthRadius, 30))
+        self.entities.append(PolygonEntity(blueCircle, earthSpeed, startAngle, sun, 5, earthRadius, 0))
         self.entities.append(EllipseEntity(redCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius, -45))
         self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius, 0))
         self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50))
-        # self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[1], 1))
+        self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[1], 1))
         self.entities.append(sun)
         self.entities[3].doHighlight()
 
@@ -351,7 +386,7 @@ class island(Puzzle):
         self.random = []
 
         # a fraction of them are shapeshifters: they shift color on each move!
-        prando = 10
+        prando = 0
 
         for p in range(self.numP):
             r = randint(0,100)
