@@ -18,6 +18,9 @@ class Puzzle():
         self.curIter = 0
         self.numIter = 1000
 
+    def handleCollisions(self, cols):
+        if (len(cols) > 0):
+            return
     def Entities(self):
         return self.entities
 
@@ -137,6 +140,62 @@ class bugs(Puzzle):
         self.entities[0].following = self.entities[n-1]
         self.fixedShapes.append(FixedEntity(shapePoly(pts, Qt.white), 0, 0, trace))
 
+
+# Blue Neutron collides into Uranium -> Creates Barium, Krypton, and 2 other neutrons which can
+# then blast other Uranium atoms. Hence exponential fission or chain reaction.
+class collider(Puzzle):
+    def __init__(self):
+        global gridsize
+        Puzzle.__init__(self)
+        pumpwidth = 20
+        self.neutronspeed = 10
+        numNeutrons = 5
+        numUranium = 100
+        self.entities = []
+        self.redCircle = shapeCircle(6, Qt.red)
+        self.yellowCircle = shapeCircle(10, Qt.yellow)
+        self.greenCircle = shapeCircle(3, Qt.green)
+        self.blueCircle = shapeCircle(2, Qt.blue)
+
+        for i in range(numUranium):
+            e1 = FixedEntity(self.redCircle, randint(int(gridsize/3), int(2*gridsize/3)), randint(int(gridsize/3), int(2*gridsize/3)), 0)
+            self.entities.append(e1)
+
+        for i in range(numNeutrons):
+            e1 = BoundedBoxEntity(self.blueCircle, self.neutronspeed, gridsize/2, gridsize/2, \
+                                        0, 0, gridsize, gridsize, 0, 0)
+            self.entities.append(e1)
+
+    def isNeutron(self, e1):
+        return (e1.shape.color == Qt.blue)
+
+    def isUranium(self, e1):
+        return (e1.shape.color == Qt.red)
+
+    def iterate(self, num):
+        for e in range(len(self.entities)):
+            self.entities[e].move()
+        c = detectCollisions(self.entities)
+        for i in range(len(c)):
+            e1 = self.entities[c[i]['e1']]
+            e2  = self.entities[c[i]['e2']]
+            if ( (self.isNeutron(e1) and self.isUranium(e2)) or (self.isUranium(e1) and self.isNeutron(e2))):
+                # remove Red. add 2 Green. add another Blue.
+                neu = BoundedBoxEntity(self.blueCircle, self.neutronspeed, e1.x, e1.y, \
+                                            0, 0, gridsize, gridsize, 0, 0)
+                g1 =  FixedEntity(self.greenCircle, e1.x-3, e1.y-3, 0)
+                g2 = FixedEntity(self.greenCircle, e1.x+3, e1.y+3, 0)
+                g3 = FixedEntity(self.yellowCircle, e1.x, e1.y, 0)
+                if (self.isUranium(e2)):
+                    re = c[i]['e2']
+                else:
+                    re = c[i]['e1']
+                self.entities.pop(re)
+                self.entities.append(neu)
+                self.entities.append(g3)
+                self.entities.append(g1)
+                self.entities.append(g2)
+
 class orbits(Puzzle):
     def __init__(self):
         global gridsize
@@ -164,10 +223,10 @@ class orbits(Puzzle):
         self.entities = []
         self.entities.append(PolygonEntity(blueCircle, earthSpeed, startAngle, sun, 5, earthRadius, -50, trace))
         self.entities.append(EllipseEntity(redCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius, -45, trace))
-        self.entities.append(BoundedBoxEntity(redCircle, 5, 300, 400, 180, 180, 320, 480, 0, 1))
+        self.entities.append(BoundedBoxEntity(redCircle, 10, 300, 400, 180, 180, 320, 480, 1, 1))
         self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius, 0, trace))
         self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50, 700, trace))
-        self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[2], 1, trace))
+        self.entities.append(FollowerEntity(blueCircle, 10, self.entities[0].x, self.entities[0].y, self.entities[2], 1, trace))
         self.entities.append(sun)
 
     def iterate(self, num):
@@ -184,6 +243,8 @@ def main():
             prob = orbits()
         elif (sys.argv[1] == 'bugs'):
             prob = bugs(5)
+        elif (sys.argv[1] == 'collider'):
+            prob = collider()
         else:
             prob = island()
     else:

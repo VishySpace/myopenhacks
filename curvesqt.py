@@ -237,7 +237,8 @@ class PolygonEntity(Entity):
             self.dist = 0
         self.setAngle(self.angle)
 
-
+# added BoundedBox trajectory: entity moves along a random st. line,
+# bouncing within a box (or can randomly change angle at each step)
 class BoundedBoxEntity(Entity):
     def __init__(self, shape, speed, x, y, lx, ly, ux, uy, rando, trace):
         Entity.__init__(self, shape, speed, x, y, trace)
@@ -249,6 +250,7 @@ class BoundedBoxEntity(Entity):
         self.uy = uy
         self.random = rando
         self.angle = randint(0, 360)
+
 
     def move(self):
         dx = self.speed * math.cos(2 * math.pi * self.angle / 360)
@@ -290,6 +292,7 @@ class FunctionEntity(Entity):
         self.x = nx
         self.y = ny
 
+# goes towards or away from another entity
 class FollowerEntity(Entity):
     def __init__(self, shape, speed, x, y, fid, towards, trace):
         Entity.__init__(self, shape, speed, x, y, trace)
@@ -317,6 +320,19 @@ class FollowerEntity(Entity):
         self.x = nx
         self.y = ny
 
+
+def colliding(x1, y1, x2, y2):
+    delta = 5
+    return ((abs(x1 - x2) < delta) and (abs(y1-y2) < delta))
+
+def detectCollisions(ents):
+    colls = []
+    for i in range(len(ents)):
+        for j in range(i+1, len(ents)):
+            if (colliding(ents[i].x, ents[i].y, ents[j].x, ents[j].y)):
+                colls.append({"e1":i, "e2":j})
+    return colls
+
 ## SIMULATION ITERATOR ##############################
 
 def startTimer(puzl, win):
@@ -329,7 +345,7 @@ def startTimer(puzl, win):
     puzl.iterate(puzl.curIter)
     win.title = "Round: " + str(puzl.curIter)
     win.update()
-    threading.Timer(0.3, startTimer, [puzl, win]).start()
+    threading.Timer(1, startTimer, [puzl, win]).start()
 
 def stopLoop(puzl):
     puzl.allStop = 1
