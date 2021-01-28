@@ -157,18 +157,18 @@ class orbits(Puzzle):
         moonSpeed = 30 #1.1 KMPS
         marsSpeed = 20
         rocketSpeed = 4
-        earthRadius = 3 * radius # 1.5 * 10^8 KM
+        earthRadius = 1.5 * radius # 1.5 * 10^8 KM
         moonRadius = radius / 4 # 3.48 * 10^5KM
 
         startAngle = 0
         self.entities = []
         self.entities.append(PolygonEntity(blueCircle, earthSpeed, startAngle, sun, 5, earthRadius, -50, trace))
         self.entities.append(EllipseEntity(redCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius, -45, trace))
+        self.entities.append(BoundedBoxEntity(redCircle, 5, 300, 400, 180, 180, 320, 480, 0, 1))
         self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius, 0, trace))
         self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50, 700, trace))
-        self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[1], 1, trace))
+        self.entities.append(FollowerEntity(blueCircle, rocketSpeed, self.entities[0].x, self.entities[0].y, self.entities[2], 1, trace))
         self.entities.append(sun)
-        self.entities[3].doHighlight()
 
     def iterate(self, num):
         for e in range(len(self.entities)):
@@ -190,6 +190,6 @@ def main():
         prob = island()
     window.InitWindow(prob)
     window.update()
-    ## startTimer() <-- uncomment to auto start the program
+    ## startTimer(prob, window) <-- uncomment to auto start the program
     sys.exit(App.exec_())
 main()

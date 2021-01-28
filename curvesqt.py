@@ -204,6 +204,7 @@ class EllipseEntity(Entity):
 def degToRadian(angle):
     return (angle * math.pi / 180)
 
+# follows a n-sided polygon trajectory
 class PolygonEntity(Entity):
     def __init__(self, shape, speed, angle, cobj, nsides, sidelength, tiltAngle, trace):
         Entity.__init__(self, shape, speed, 0, 0, trace)
@@ -236,6 +237,38 @@ class PolygonEntity(Entity):
             self.dist = 0
         self.setAngle(self.angle)
 
+
+class BoundedBoxEntity(Entity):
+    def __init__(self, shape, speed, x, y, lx, ly, ux, uy, rando, trace):
+        Entity.__init__(self, shape, speed, x, y, trace)
+        self.y = y
+        self.x = x
+        self.lx = lx
+        self.ly = ly
+        self.ux = ux
+        self.uy = uy
+        self.random = rando
+        self.angle = randint(0, 360)
+
+    def move(self):
+        dx = self.speed * math.cos(2 * math.pi * self.angle / 360)
+        dy = self.speed * math.sin(2 * math.pi * self.angle / 360)
+        nx = self.x + dx
+        ny = self.y + dy
+        na = self.angle
+        if (self.random):
+            na = randint(0, 360)
+        if ((nx <= self.lx) or (nx >= self.ux)):
+            nx -= dx
+            na = 180 - self.angle
+        elif ((ny <= self.ly) or (ny >= self.uy)):
+            na = 360 - self.angle
+            ny -= dy
+        self.x = nx
+        self.y = ny
+        self.angle = na
+
+# follows a random function. CAREFUL! USES EVAL()
 class FunctionEntity(Entity):
     def __init__(self, shape, speed, ix, iy, expr, amp, bound, trace):
         Entity.__init__(self, shape, speed, ix, iy, trace)
@@ -251,7 +284,7 @@ class FunctionEntity(Entity):
         nx += self.speed
         if (nx >= self.bound):
             nx = self.ix
-        ny = self.iy + self.amp * (math.sin(4 * nx * math.pi / 360)) #
+        # ny = self.iy + self.amp * (math.sin(4 * nx * math.pi / 360)) #
         x = nx
         ny = self.iy + eval(self.expr)
         self.x = nx
@@ -283,8 +316,6 @@ class FollowerEntity(Entity):
             nx = x - (xf - x) * self.speed / dist
         self.x = nx
         self.y = ny
-
-
 
 ## SIMULATION ITERATOR ##############################
 
