@@ -77,10 +77,15 @@ class Window(QMainWindow):
             p.draw(painter)
 
 ## SHAPES ##############################
-class shapeCircle(object):
-    def __init__(self, radius, color):
-        self.radius = radius
+class Shape(object):
+    def __init__(self, color, size):
         self.color = color
+        self.boundingRadius = size
+
+class shapeCircle(Shape):
+    def __init__(self, radius, color):
+        Shape.__init__(self, color, radius)
+        self.radius = radius
 
     def draw(self, x, y, painter, highlight):
         if (self.radius == 0):
@@ -92,10 +97,10 @@ class shapeCircle(object):
             painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
             painter.drawEllipse(x - self.radius, y - 3*self.radius, 2*self.radius, 2*self.radius)
 
-class shapePoly(object):
-    def __init__(self, pts, color):
+class shapePoly(Shape):
+    def __init__(self, pts, color, boundingRadius):
+        Shape.__init__(self,color, boundingRadius)
         self.pts = pts
-        self.color = color
 
     def draw(self, x, y, painter, highlight):
         # painter.setPen(QPen(self.color, 1, Qt.SolidLine))
@@ -105,10 +110,11 @@ class shapePoly(object):
         painter.setBrush(QBrush(self.color, Qt.SolidPattern))
         painter.drawPolygon(polygon)
 
-class shapeSquare(object):
+class shapeSquare(Shape):
     def __init__(self, side, color):
+        Shape.__init__(self,color, side/2)
         self.side = side
-        self.color = color
+        self.firm = 1
 
     def draw(self, x, y, painter, highlight):
         painter.setBrush(QBrush(self.color, Qt.SolidPattern))
@@ -117,10 +123,10 @@ class shapeSquare(object):
             painter.setBrush(QBrush(Qt.green, Qt.SolidPattern))
             painter.drawEllipse(x - self.side/2, y - 1.5*self.side, self.side, self.side)
 
-class shapePerson(object):
+class shapePerson(Shape):
     def __init__(self, width, color):
+        Shape.__init__(self, color, width)
         self.width = width
-        self.color = color
         self.head = width/3
         self.leg = width/2.5
 
@@ -152,6 +158,9 @@ class Entity(object):
 
     def doHighlight(self):
         self.highlight = 1
+
+    def bounce(self):
+        return
 
     def draw(self, painter):
         if (self.trace):
@@ -251,6 +260,8 @@ class BoundedBoxEntity(Entity):
         self.random = rando
         self.angle = randint(0, 360)
 
+    def bounce(self):
+        self.angle = 180 - self.angle
 
     def move(self):
         dx = self.speed * math.cos(2 * math.pi * self.angle / 360)
@@ -321,15 +332,14 @@ class FollowerEntity(Entity):
         self.y = ny
 
 
-def colliding(x1, y1, x2, y2):
-    delta = 5
-    return ((abs(x1 - x2) < delta) and (abs(y1-y2) < delta))
+def colliding(e1, e2):
+    return ( ((e1.x - e2.x)**2 + (e1.y-e2.y)**2) <= (e1.shape.boundingRadius + e2.shape.boundingRadius)**2)
 
 def detectCollisions(ents):
     colls = []
     for i in range(len(ents)):
         for j in range(i+1, len(ents)):
-            if (colliding(ents[i].x, ents[i].y, ents[j].x, ents[j].y)):
+            if (colliding(ents[i], ents[j])):
                 colls.append({"e1":i, "e2":j})
     return colls
 

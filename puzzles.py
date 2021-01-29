@@ -138,7 +138,7 @@ class bugs(Puzzle):
             else:
                 self.entities.append(FollowerEntity(redSquare, speed, x, y, None, 1, trace))
         self.entities[0].following = self.entities[n-1]
-        self.fixedShapes.append(FixedEntity(shapePoly(pts, Qt.white), 0, 0, trace))
+        self.fixedShapes.append(FixedEntity(shapePoly(pts, Qt.white, 2*size), 0, 0, trace))
 
 
 # Blue Neutron collides into Uranium -> Creates Barium, Krypton, and 2 other neutrons which can
@@ -149,22 +149,30 @@ class collider(Puzzle):
         Puzzle.__init__(self)
         pumpwidth = 20
         self.neutronspeed = 10
-        numNeutrons = 5
+        numNeutrons = 10
         numUranium = 100
         self.entities = []
         self.redCircle = shapeCircle(6, Qt.red)
         self.yellowCircle = shapeCircle(10, Qt.yellow)
         self.greenCircle = shapeCircle(3, Qt.green)
         self.blueCircle = shapeCircle(2, Qt.blue)
-
+        self.blackBox = shapeSquare(40, Qt.black)
+        numBlockers = 2
         for i in range(numUranium):
             e1 = FixedEntity(self.redCircle, randint(int(gridsize/3), int(2*gridsize/3)), randint(int(gridsize/3), int(2*gridsize/3)), 0)
             self.entities.append(e1)
 
+        for i in range(numBlockers):
+            e1 = BoundedBoxEntity(self.blackBox, 0, randint(0, gridsize), randint(0, gridsize), \
+                    0, 0, gridsize, gridsize, 0, 0)
+            self.entities.append(e1)
+
         for i in range(numNeutrons):
             e1 = BoundedBoxEntity(self.blueCircle, self.neutronspeed, gridsize/2, gridsize/2, \
-                                        0, 0, gridsize, gridsize, 0, 0)
+                    0, 0, gridsize, gridsize, 0, 0)
             self.entities.append(e1)
+
+
 
     def isNeutron(self, e1):
         return (e1.shape.color == Qt.blue)
@@ -176,12 +184,17 @@ class collider(Puzzle):
         for e in range(len(self.entities)):
             self.entities[e].move()
         c = detectCollisions(self.entities)
-        for i in range(len(c)):
+        remList = []
+        cl = len(c)
+        for i in range(cl):
             e1 = self.entities[c[i]['e1']]
             e2  = self.entities[c[i]['e2']]
+            if (e1.shape.color == Qt.black):
+                e2.bounce()
+                continue
             if ( (self.isNeutron(e1) and self.isUranium(e2)) or (self.isUranium(e1) and self.isNeutron(e2))):
                 # remove Red. add 2 Green. add another Blue.
-                neu = BoundedBoxEntity(self.blueCircle, self.neutronspeed, e1.x, e1.y, \
+                neu = BoundedBoxEntity(self.blueCircle, 2*self.neutronspeed, e1.x, e1.y, \
                                             0, 0, gridsize, gridsize, 0, 0)
                 g1 =  FixedEntity(self.greenCircle, e1.x-3, e1.y-3, 0)
                 g2 = FixedEntity(self.greenCircle, e1.x+3, e1.y+3, 0)
@@ -190,11 +203,15 @@ class collider(Puzzle):
                     re = c[i]['e2']
                 else:
                     re = c[i]['e1']
-                self.entities.pop(re)
+                if (not (re in remList)):
+                    remList.append(re)
                 self.entities.append(neu)
                 self.entities.append(g3)
                 self.entities.append(g1)
                 self.entities.append(g2)
+        rl = len(remList)
+        for r in reversed(remList):
+            self.entities.pop(r)
 
 class orbits(Puzzle):
     def __init__(self):
@@ -212,8 +229,8 @@ class orbits(Puzzle):
         yCircle = shapeCircle(6, Qt.yellow)
         sun = FixedEntity(yCircle, self.cx, self.cy, trace)
 
-        earthSpeed = 30 # 30KMPS
-        moonSpeed = 30 #1.1 KMPS
+        earthSpeed = 10 # 30KMPS
+        moonSpeed = 15 #1.1 KMPS
         marsSpeed = 20
         rocketSpeed = 4
         earthRadius = 1.5 * radius # 1.5 * 10^8 KM
@@ -223,7 +240,7 @@ class orbits(Puzzle):
         self.entities = []
         self.entities.append(PolygonEntity(blueCircle, earthSpeed, startAngle, sun, 5, earthRadius, -50, trace))
         self.entities.append(EllipseEntity(redCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius, -45, trace))
-        self.entities.append(BoundedBoxEntity(redCircle, 10, 300, 400, 180, 180, 320, 480, 1, 1))
+        self.entities.append(BoundedBoxEntity(redCircle, 10, 300, 400, 180, 180, 320, 480, 0, 0))
         self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius, 0, trace))
         self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50, 700, trace))
         self.entities.append(FollowerEntity(blueCircle, 10, self.entities[0].x, self.entities[0].y, self.entities[2], 1, trace))
