@@ -38,13 +38,16 @@ class Window(QMainWindow):
         self.gridsize = gridsize
         self.width = gridsize
         self.height = gridsize
-        ents = []  # moving entities
-        fixedShapes = [] # fixed entities like background
+        self.ents = []  # moving entities
+        self.fixedShapes = [] # fixed entities like background
+        self.connectors = [] # lines to connect entities
         # self.InitWindow(puzl)
 
     def InitWindow(self, puzl):
+        self.puzl = puzl
         self.ents = puzl.Entities()
         self.fixedShapes = puzl.FixedShapes()
+        self.connectors = puzl.Connectors()
         self.setWindowTitle(self.title)
         self.setGeometry(self.top, self.left, self.width, self.height)
 
@@ -75,6 +78,11 @@ class Window(QMainWindow):
         for i in range(len(self.ents)):
             p = self.ents[i]
             p.draw(painter)
+        self.connectors = self.puzl.Connectors()
+        for i in range(len(self.connectors)):
+            e1 = self.connectors[i]["e1"]
+            e2 = self.connectors[i]["e2"]
+            painter.drawLine(e1["x"], e1["y"], e2["x"], e2["y"])
 
 ## SHAPES ##############################
 class Shape(object):

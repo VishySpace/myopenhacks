@@ -13,6 +13,7 @@ class Puzzle():
         self.cx = gridsize/2
         self.cy = gridsize/2
         self.fixedShapes = []
+        self.connectors = []
 
         self.allStop = 0 # stop rounds
         self.curIter = 0
@@ -26,6 +27,9 @@ class Puzzle():
 
     def FixedShapes(self):
         return self.fixedShapes
+
+    def Connectors(self):
+        return self.connectors
 
     def iterate(self, num):
         for e in range(len(self.entities)):
@@ -140,6 +144,16 @@ class bugs(Puzzle):
         self.entities[0].following = self.entities[n-1]
         self.fixedShapes.append(FixedEntity(shapePoly(pts, Qt.white, 2*size), 0, 0, trace))
 
+    def iterate(self, num):
+        # connectors
+        Puzzle.iterate(self, num)
+        for i in range(self.sides):
+            if (i > 0):
+                j = i-1
+            else:
+                j = self.sides -1
+            self.connectors.append({"e1": {"x": self.entities[i].x, "y": self.entities[i].y}, \
+                            "e2": {"x": self.entities[j].x, "y": self.entities[j].y}})
 
 # Blue Neutron collides into Uranium -> Creates Barium, Krypton, and 2 other neutrons which can
 # then blast other Uranium atoms. Hence exponential fission or chain reaction.
@@ -246,9 +260,6 @@ class orbits(Puzzle):
         self.entities.append(FollowerEntity(blueCircle, 10, self.entities[0].x, self.entities[0].y, self.entities[2], 1, trace))
         self.entities.append(sun)
 
-    def iterate(self, num):
-        for e in range(len(self.entities)):
-            self.entities[e].move()
 
 def main():
     App = QApplication(sys.argv)
