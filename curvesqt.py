@@ -363,7 +363,7 @@ def startTimer(puzl, win):
     puzl.iterate(puzl.curIter)
     win.title = "Round: " + str(puzl.curIter)
     win.update()
-    threading.Timer(1, startTimer, [puzl, win]).start()
+    threading.Timer(0.3, startTimer, [puzl, win]).start()
 
 def stopLoop(puzl):
     puzl.allStop = 1
