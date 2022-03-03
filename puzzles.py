@@ -119,6 +119,88 @@ class island(Puzzle):
                 self.entities[n0].towards = (self.entities[minP1].shape.color == self.entities[minP2].shape.color)
             self.entities[n0].move()
 
+
+# planes flying towards each other on a polygon
+class planes(Puzzle):
+    def __init__(self, n, speeds):
+        global gridsize
+        Puzzle.__init__(self)
+        self.sides = n
+        size = gridsize/4
+        self.speeds = []
+        self.entities = []
+        self.angles = [30, 50, 270]
+        self.nd = 0
+        self.alldone = 0
+        for i in range(n):
+            self.speeds.append(speeds[i])
+
+        self.createPoly(self.cx, self.cy, size, n)
+
+    def createPoly(self, cx, cy, size, n):
+        trace = 0
+        redSquare = shapeSquare(1, Qt.red)
+        blueSquare = shapeSquare(1, Qt.blue)
+        pts = []
+        minx = 1000
+        miny = 1000
+        maxx = 0
+        maxy = 0
+        for i in range(n):
+            x = cx + size * math.cos(2 * math.pi * i / n)
+            y = cy + size * math.sin(2 * math.pi * i / n)
+            print(x, y)
+            pts.append(QPointF(x, y))
+            if (x > maxx):
+                maxx = x
+            if (y > maxy):
+                maxy = y
+            if (x <  minx):
+                minx = x
+            if (y < miny):
+                miny = y
+        self.fixedShapes.append(FixedEntity(shapePoly(pts, Qt.white, 2*size), 0, 0, trace))
+        e = 0
+        for i in range(floor(minx), floor(maxx)):
+            for j in range(floor(miny), floor(maxy)):
+                if ((i+j)%20 == 0):
+                    e1 = FixedEntity(blueSquare, i, j, 0)
+                    self.entities.append(e1)
+                    e += 1
+        print("num ", e)
+        self.nd = e
+        for j in range(e):
+            for i in range(n):
+                x = cx + size * math.cos(2 * math.pi * i / n)
+                y = cy + size * math.sin(2 * math.pi * i / n)
+                self.entities.append(FollowerEntity(redSquare, self.speeds[i], x, y, self.entities[j], 1, trace))
+    def iterate(self, num):
+        Puzzle.iterate(self, num)
+        if (not self.alldone):
+            for j in range(self.nd):
+                done = 1
+                n = self.sides
+                for i in range(n):
+                    if (not colliding(self.entities[j], self.entities[self.nd + j*n + i])):
+                        done = 0
+                if (done):
+                    print("found a solution! at ", j, (self.entities[j].x - self.cx)*4.0/gridsize, (self.entities[j].y - self.cy)*4.0/gridsize)
+                    self.alldone = 1
+                    break
+            if (self.alldone):
+                redSquare = shapeSquare(3, Qt.red)
+                blueSquare = shapeSquare(3, Qt.blue)
+                dx = self.entities[j].x
+                dy= self.entities[j].y
+                self.entities.clear()
+                e1 = FixedEntity(blueSquare, dx, dy, 0)
+                self.entities.append(e1)
+                size = gridsize / 4
+                for i in range(n):
+                    x = self.cx + size * math.cos(2 * math.pi * i / n)
+                    y = self.cy + size * math.sin(2 * math.pi * i / n)
+                    self.entities.append(FollowerEntity(redSquare, self.speeds[i], x, y, self.entities[0], 1, 1))
+
 # bugs crawling towards each other on a polygon
 class bugs(Puzzle):
     def __init__(self, n):
@@ -256,7 +338,7 @@ class orbits(Puzzle):
         self.entities.append(EllipseEntity(redCircle, marsSpeed, startAngle, sun, earthRadius*2.5, earthRadius, -45, trace))
         self.entities.append(BoundedBoxEntity(redCircle, 10, 300, 400, 180, 180, 320, 480, 0, 0))
         self.entities.append(EllipseEntity(greenCircle, moonSpeed, startAngle, self.entities[0], moonRadius, moonRadius, 0, trace))
-        self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 50, 700, trace))
+        self.entities.append(FunctionEntity(redCircle, speed, 100, 200, '50*sin(4*x*2*math.pi/360)**2', 700, trace))
         self.entities.append(FollowerEntity(blueCircle, 10, self.entities[0].x, self.entities[0].y, self.entities[2], 1, trace))
         self.entities.append(sun)
 
@@ -273,6 +355,8 @@ def main():
             prob = bugs(5)
         elif (sys.argv[1] == 'collider'):
             prob = collider()
+        elif (sys.argv[1] == 'planes'):
+            prob = planes(5, [2, 2, 4, 4, 4])
         else:
             prob = island()
     else:

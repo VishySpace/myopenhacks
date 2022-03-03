@@ -45,8 +45,50 @@ def fillCircle(pos, n):
         used[sq-1] = 0
     return 0
 
+def fn(n):
+    if ((n == 1) or (n == 3)):
+        return n
+    if (n%2 == 0):
+        x = n/2
+        return fn(x)
+    if ( (n-1)%4 == 0):
+        x = (n-1)/4
+        return 2*fn(2*x+1) - fn(x)
+    if ( (n-3)%4 == 0):
+        x = (n-3)/4
+        return 3*fn(2*x+1) - 2*fn(x)
+    print("woah ", n)
+    return(-1)
+
 def main():
+    ct = 0.0
+    for n in range(1, 100):
+        ct += float(n**2)/3**n
+        print(ct)
+    print ct
+    return
+    from turtle import *
+    color('red', 'blue')
+    begin_fill()
+
     global ct
+    ct = 0
+    j = 0
+    for i in range(1, 2022):
+        if (fn(i) == i):
+            ct += 1
+            print(i, i-j)
+            left((i-j)/2)
+            forward(i/32)
+            j = i
+
+    print("---- ", ct)
+    end_fill()
+    exitonclick()
+    return
+
+
+
     N = int(sys.argv[1])
     for n in range(1, N):
         # print(n)

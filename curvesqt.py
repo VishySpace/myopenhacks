@@ -291,13 +291,12 @@ class BoundedBoxEntity(Entity):
 
 # follows a random function. CAREFUL! USES EVAL()
 class FunctionEntity(Entity):
-    def __init__(self, shape, speed, ix, iy, expr, amp, bound, trace):
+    def __init__(self, shape, speed, ix, iy, expr, bound, trace):
         Entity.__init__(self, shape, speed, ix, iy, trace)
         self.expr = expr
         self.dist = 0
         self.iy = iy
         self.ix = ix
-        self.amp = amp
         self.bound = bound
 
     def move(self):
@@ -308,8 +307,10 @@ class FunctionEntity(Entity):
         # ny = self.iy + self.amp * (math.sin(4 * nx * math.pi / 360)) #
         x = nx
         ny = self.iy + eval(self.expr)
+
         self.x = nx
         self.y = ny
+
 
 # goes towards or away from another entity
 class FollowerEntity(Entity):
