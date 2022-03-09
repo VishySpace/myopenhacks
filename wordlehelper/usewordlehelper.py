@@ -1,6 +1,6 @@
 import sys, argparse
 from wordlehelpersolver import wordlehelpersolve
-
+# only for local run
 def main():
     parser = argparse.ArgumentParser(description='Wordle Helper')
 
